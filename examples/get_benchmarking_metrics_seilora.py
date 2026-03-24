@@ -512,7 +512,7 @@ def save_output(rank = 256, trained_version = None, quant = False, full = False)
     #         print(f"Results saved to {pai_path}")
     # # ChrombpNet
 
-    #yoruba_pearson, yoruba_ap = get_yoruba_lcl_dsqtls(model = cp_var_mod, rank = rank, trained_version = trained_version)
+    yoruba_pearson, yoruba_ap = get_yoruba_lcl_dsqtls(model = cp_var_mod, rank = rank, trained_version = trained_version)
     eu_pearson, eu_ap = get_eu_lcl_caqtls(model = cp_var_mod, rank = rank, trained_version = trained_version)
 
     afr_pearson, afr_ap = get_afr_lcl_caqtls(model = cp_var_mod, rank = rank, trained_version = trained_version)
@@ -527,14 +527,14 @@ def save_output(rank = 256, trained_version = None, quant = False, full = False)
     bpn_row_dict = {
         "model": model_name,
         "EU_LCL_pearson_signed": round(eu_pearson.statistic, 4),
-        #"Yoruba_LCL_pearson_signed": round(yoruba_pearson.statistic, 4),
+        "Yoruba_LCL_pearson_signed": round(yoruba_pearson.statistic, 4),
         "African_LCL_pearson_signed":round(afr_pearson.statistic, 4),
         "EU_Microglia_pearson_signed": round(microglia_pearson.statistic, 4),
         "EU_spi1_LCL_pearson_signed": round(spi1_pearson.statistic, 4),
         "EU_SMC_pearson_signed": round(smc_pearson.statistic, 4),
 
         "EU_LCL_AP_unsigned": round(eu_ap, 4),
-        #"Yoruba_AP_LCL_unsigned": round(yoruba_ap, 4),
+        "Yoruba_AP_LCL_unsigned": round(yoruba_ap, 4),
         "African_AP_unsigned": round(afr_ap, 4)
   
     }
