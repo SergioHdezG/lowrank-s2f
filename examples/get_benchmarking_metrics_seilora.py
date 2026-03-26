@@ -16,7 +16,7 @@ from scipy.stats import pearsonr, spearmanr
 from scipy.special import expit
 from sklearn.metrics import average_precision_score, matthews_corrcoef, f1_score, roc_auc_score
 import seimodel as sm
-import seilora as sl
+import seillra as sl
 import torch.nn as nn
 import torch
 
@@ -130,10 +130,10 @@ def initialize_models(rank: int, trained_version: str, quant: bool, full = False
     else:
         q = None
     if not full:
-        cp_model_seq = sl.Sei_LLRA(k=rank, projection = False, mode = "sequence", device = dev)
-        cp_model_var = sl.Sei_LLRA(k=rank, projection = False, mode = "variant", device = dev)
-        sc_model_seq = sl.Sei_LLRA(k=rank, projection = True, mode = "sequence", device = dev)
-        sc_model_var = sl.Sei_LLRA(k=rank, projection = True, mode = "variant", device = dev)
+        cp_model_seq = sl.Sei_LLRA(k=rank, projection = False, mode = "sequence")
+        cp_model_var = sl.Sei_LLRA(k=rank, projection = False, mode = "variant")
+        sc_model_seq = sl.Sei_LLRA(k=rank, projection = True, mode = "sequence")
+        sc_model_var = sl.Sei_LLRA(k=rank, projection = True, mode = "variant")
 
         if quant != True:
             cp_model_seq.trunk.load_weights()
@@ -383,7 +383,8 @@ def get_spi1_bqtls(model, rank, trained_version = ""):
 
 def get_variants(model, vcf, rank, benchmark_name="", trained_version = "", sc = False):
     dataset = VariantDataset(file_path=vcf)
-    dataloader = VariantDataLoader(dataset=dataset, batch_size=32, shuffle=False, num_workers=15)
+    # dataloader = VariantDataLoader(dataset=dataset, batch_size=32, shuffle=False, num_workers=15)
+    dataloader = VariantDataLoader(dataset=dataset, batch_size=8, shuffle=False, num_workers=15) # Reduce batch size due to CUDA OOM
     device = model.device
     model = model.to(device)
     model.eval()
@@ -512,7 +513,8 @@ def save_output(rank = 256, trained_version = None, quant = False, full = False)
     #         print(f"Results saved to {pai_path}")
     # # ChrombpNet
 
-    yoruba_pearson, yoruba_ap = get_yoruba_lcl_dsqtls(model = cp_var_mod, rank = rank, trained_version = trained_version)
+    # Exclude Yoruba dataset temporarily due to data loading error
+    # yoruba_pearson, yoruba_ap = get_yoruba_lcl_dsqtls(model = cp_var_mod, rank = rank, trained_version = trained_version)
     eu_pearson, eu_ap = get_eu_lcl_caqtls(model = cp_var_mod, rank = rank, trained_version = trained_version)
 
     afr_pearson, afr_ap = get_afr_lcl_caqtls(model = cp_var_mod, rank = rank, trained_version = trained_version)
@@ -527,14 +529,14 @@ def save_output(rank = 256, trained_version = None, quant = False, full = False)
     bpn_row_dict = {
         "model": model_name,
         "EU_LCL_pearson_signed": round(eu_pearson.statistic, 4),
-        "Yoruba_LCL_pearson_signed": round(yoruba_pearson.statistic, 4),
+        # "Yoruba_LCL_pearson_signed": round(yoruba_pearson.statistic, 4),
         "African_LCL_pearson_signed":round(afr_pearson.statistic, 4),
         "EU_Microglia_pearson_signed": round(microglia_pearson.statistic, 4),
         "EU_spi1_LCL_pearson_signed": round(spi1_pearson.statistic, 4),
         "EU_SMC_pearson_signed": round(smc_pearson.statistic, 4),
 
         "EU_LCL_AP_unsigned": round(eu_ap, 4),
-        "Yoruba_AP_LCL_unsigned": round(yoruba_ap, 4),
+        # "Yoruba_AP_LCL_unsigned": round(yoruba_ap, 4),
         "African_AP_unsigned": round(afr_ap, 4)
   
     }
@@ -572,15 +574,8 @@ def main():
     # save_output(rank=16, quant = True)
     # save_output(rank=64, quant = True)
     save_output(rank=256, quant = True)
-    save_output(rank=1024, quant = True)
-    save_output(rank=2048, quant = True)
-
-
-
+    # save_output(rank=1024, quant = True)
     # save_output(rank=2048, quant = True)
-  
-
-
 
 if __name__ == '__main__':
     main()

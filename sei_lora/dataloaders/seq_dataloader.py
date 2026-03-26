@@ -31,8 +31,8 @@ class SeqDataset(torch.utils.data.Dataset):
         self.genome = self._load_fasta(fasta_path)  # Preload FASTA for efficiency
         if self.mode == "variant_prediction":
             self.vcf_positions = pd.read_csv(file_path, comment="#", sep="\t", header = None)
-            self.vcf_positions = self.vcf_positions[[0, 1, 7, 3, 4]]
-            self.vcf_positions.columns = ["CHROM", "POS", "STRAND", "REF", "ALT" ]
+            self.vcf_positions = self.vcf_positions[[0, 1, 7, 3, 4]] # Re-order columns to match line below
+            self.vcf_positions.columns = ["CHROM", "POS", "STRAND", "REF", "ALT"]
             self.vcf_positions["CHROM"] = self.vcf_positions["CHROM"].apply(
                 lambda x: f"chr{x}" if not str(x).startswith("chr") else x
             )
