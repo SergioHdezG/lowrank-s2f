@@ -557,7 +557,8 @@ def main():
 
     #save_output(rank="full", quant = False, full = True)
   
-    # save_output(rank=1, quant = False)
+    # save_output(rank=1, quant = False) # AttributeError: 'SeiTrunk' object has no attribute 'load_weights'
+    save_output(rank=1, quant = True)
     # # save_output(rank=2, quant = False)
     # save_output(rank=4, quant = False)
     # # save_output(rank=8, quant = False)
@@ -573,7 +574,7 @@ def main():
     # save_output(rank=4, quant = True)
     # save_output(rank=16, quant = True)
     # save_output(rank=64, quant = True)
-    save_output(rank=256, quant = True)
+    # save_output(rank=256, quant = True)
     # save_output(rank=1024, quant = True)
     # save_output(rank=2048, quant = True)
 
