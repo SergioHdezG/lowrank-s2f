@@ -1,0 +1,11 @@
+Cardiomyocyte | ATAC-seq | ID:79500
+Cardiomyocyte | ATAC-seq | ID:79708
+Cardiomyocyte | ATAC-seq | ID:79709
+Cardiomyocyte | ATAC-seq | ID:79711
+Cardiomyocyte | ATAC-seq | ID:79712
+Cardiomyocyte | ATAC-seq | ID:79713
+Cardiomyocyte | ATAC-seq | ID:79716
+Cardiomyocyte | ATAC-seq | ID:79795
+Cardiomyocyte | ATAC-seq | ID:80023
+Cardiomyocyte | ATAC-seq | ID:80666
+Cardiomyocyte | ATAC-seq | ID:80899

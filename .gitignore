@@ -1,0 +1,6 @@
+*.tsv
+*.zip
+*.gz
+*.bb
+data/*
+resources/*

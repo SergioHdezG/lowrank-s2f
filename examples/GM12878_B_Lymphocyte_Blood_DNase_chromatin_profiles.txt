@@ -1,0 +1,6 @@
+GM12878_B_Lymphocyte_Blood | DNase | ID:40763
+GM12878_B_Lymphocyte_Blood | DNase | ID:44921
+GM12878_B_Lymphocyte_Blood | DNase | ID:44922
+GM12878_B_Lymphocyte_Blood | DNase | ID:6712
+GM12878_B_Lymphocyte_Blood | DNase | ID:6713
+GM12878_B_Lymphocyte_Blood | DNase | ID:6714

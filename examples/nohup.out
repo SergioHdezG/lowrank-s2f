@@ -1,0 +1,40 @@
+2026-04-28 15:50:24,602 - INFO - Checksum verified for url_0fe8ae95432a4966_wts: 346677580a9bfcdab1bc83735e12c17c8f5d2ec76eb91a45b4e3b2a91f59bf40
+2026-04-28 15:50:24,603 - INFO - Loading state dict from /home/ubuntu/.cache/seillra/1.5/url_0fe8ae95432a4966_wts
+2026-04-28 15:50:24,794 - INFO - Model weights loaded and set to eval mode.
+2026-04-28 15:50:24,810 - INFO - Checksum verified for url_e65f2d624e89c963_wts: 3e53294d51d228f8f6a1023cea2ae57bfb315d4c02f2eae7a532ca22fc52152c
+2026-04-28 15:50:24,810 - INFO - Loading state dict from /home/ubuntu/.cache/seillra/1.5/url_e65f2d624e89c963_wts
+2026-04-28 15:50:24,812 - INFO - Model weights loaded and set to eval mode.
+2026-04-28 15:50:26,386 - INFO - Checksum verified for url_0fe8ae95432a4966_wts: 346677580a9bfcdab1bc83735e12c17c8f5d2ec76eb91a45b4e3b2a91f59bf40
+2026-04-28 15:50:26,386 - INFO - Loading state dict from /home/ubuntu/.cache/seillra/1.5/url_0fe8ae95432a4966_wts
+2026-04-28 15:50:26,577 - INFO - Model weights loaded and set to eval mode.
+2026-04-28 15:50:26,593 - INFO - Checksum verified for url_e65f2d624e89c963_wts: 3e53294d51d228f8f6a1023cea2ae57bfb315d4c02f2eae7a532ca22fc52152c
+2026-04-28 15:50:26,593 - INFO - Loading state dict from /home/ubuntu/.cache/seillra/1.5/url_e65f2d624e89c963_wts
+2026-04-28 15:50:26,595 - INFO - Model weights loaded and set to eval mode.
+2026-04-28 15:50:27,877 - INFO - Checksum verified for url_0fe8ae95432a4966_wts: 346677580a9bfcdab1bc83735e12c17c8f5d2ec76eb91a45b4e3b2a91f59bf40
+2026-04-28 15:50:27,877 - INFO - Loading state dict from /home/ubuntu/.cache/seillra/1.5/url_0fe8ae95432a4966_wts
+2026-04-28 15:50:28,058 - INFO - Model weights loaded and set to eval mode.
+2026-04-28 15:50:28,073 - INFO - Checksum verified for url_e65f2d624e89c963_wts: 3e53294d51d228f8f6a1023cea2ae57bfb315d4c02f2eae7a532ca22fc52152c
+2026-04-28 15:50:28,073 - INFO - Loading state dict from /home/ubuntu/.cache/seillra/1.5/url_e65f2d624e89c963_wts
+2026-04-28 15:50:28,075 - INFO - Model weights loaded and set to eval mode.
+2026-04-28 15:50:28,097 - INFO - Checksum verified for url_cf66823134e1fff4_wts: e77794f8964af32a7c4b2d40f820ba6b41a0e8fdcfdbc8a244da5630b431d6ec
+2026-04-28 15:50:28,097 - INFO - Loading state dict from /home/ubuntu/.cache/seillra/1.5/url_cf66823134e1fff4_wts
+2026-04-28 15:50:28,100 - INFO - Model weights loaded and set to eval mode.
+2026-04-28 15:50:29,383 - INFO - Checksum verified for url_0fe8ae95432a4966_wts: 346677580a9bfcdab1bc83735e12c17c8f5d2ec76eb91a45b4e3b2a91f59bf40
+2026-04-28 15:50:29,383 - INFO - Loading state dict from /home/ubuntu/.cache/seillra/1.5/url_0fe8ae95432a4966_wts
+2026-04-28 15:50:29,552 - INFO - Model weights loaded and set to eval mode.
+2026-04-28 15:50:29,566 - INFO - Checksum verified for url_e65f2d624e89c963_wts: 3e53294d51d228f8f6a1023cea2ae57bfb315d4c02f2eae7a532ca22fc52152c
+2026-04-28 15:50:29,566 - INFO - Loading state dict from /home/ubuntu/.cache/seillra/1.5/url_e65f2d624e89c963_wts
+2026-04-28 15:50:29,568 - INFO - Model weights loaded and set to eval mode.
+2026-04-28 15:50:29,590 - INFO - Checksum verified for url_cf66823134e1fff4_wts: e77794f8964af32a7c4b2d40f820ba6b41a0e8fdcfdbc8a244da5630b431d6ec
+2026-04-28 15:50:29,590 - INFO - Loading state dict from /home/ubuntu/.cache/seillra/1.5/url_cf66823134e1fff4_wts
+2026-04-28 15:50:29,592 - INFO - Model weights loaded and set to eval mode.
+Model name: seilora_1_None_quant
+8
+Batch size after DataLoader: 8
+Batch size after DataLoader: 8
+130268
+16284
+16284
+Running caqtls_eu_GM12878 benchmark:   0%|          | 0/16284 [00:00<?, ?it/s]Running caqtls_eu_GM12878 benchmark:   0%|          | 1/16284 [00:01<5:24:21,  1.20s/it]Running caqtls_eu_GM12878 benchmark:   0%|          | 2/16284 [00:02<4:55:29,  1.09s/it]Running caqtls_eu_GM12878 benchmark:   0%|          | 3/16284 [00:03<4:45:57,  1.05s/it]Running caqtls_eu_GM12878 benchmark:   0%|          | 4/16284 [00:04<4:40:20,  1.03s/it]Running caqtls_eu_GM12878 benchmark:   0%|          | 5/16284 [00:05<4:37:33,  1.02s/it]Running caqtls_eu_GM12878 benchmark:   0%|          | 6/16284 [00:06<4:35:50,  1.02s/it]Running caqtls_eu_GM12878 benchmark:   0%|          | 7/16284 [00:07<4:35:26,  1.02s/it]Running caqtls_eu_GM12878 benchmark:   0%|          | 8/16284 [00:08<4:34:53,  1.01s/it]Running caqtls_eu_GM12878 benchmark:   0%|          | 9/16284 [00:09<4:35:38,  1.02s/it]Running caqtls_eu_GM12878 benchmark:   0%|          | 10/16284 [00:10<4:35:23,  1.02s/it]Running caqtls_eu_GM12878 benchmark:   0%|          | 11/16284 [00:11<4:35:12,  1.01s/it]Running caqtls_eu_GM12878 benchmark:   0%|          | 12/16284 [00:12<4:34:55,  1.01s/it]Running caqtls_eu_GM12878 benchmark:   0%|          | 12/16284 [00:12<4:38:58,  1.03s/it]
+EU LCL CAQTLs: Saved scores
+Results saved to benchmark_chrombpnet_all_quant.tsv

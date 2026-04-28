@@ -1,0 +1,15 @@
+GM12878_B_Lymphocyte_Blood | DNase | ID:40763
+GM12878_B_Lymphocyte_Blood | DNase | ID:44921
+GM12878_B_Lymphocyte_Blood | DNase | ID:44922
+GM12878_B_Lymphocyte_Blood | ATAC-seq | ID:59676
+GM12878_B_Lymphocyte_Blood | ATAC-seq | ID:59678
+GM12878_B_Lymphocyte_Blood | ATAC-seq | ID:61819
+GM12878_B_Lymphocyte_Blood | ATAC-seq | ID:61820
+GM12878_B_Lymphocyte_Blood | ATAC-seq | ID:61821
+GM12878_B_Lymphocyte_Blood | ATAC-seq | ID:61822
+GM12878_B_Lymphocyte_Blood | ATAC-seq | ID:65259
+GM12878_B_Lymphocyte_Blood | ATAC-seq | ID:65260
+GM12878_B_Lymphocyte_Blood | ATAC-seq | ID:65262
+GM12878_B_Lymphocyte_Blood | DNase | ID:6712
+GM12878_B_Lymphocyte_Blood | DNase | ID:6713
+GM12878_B_Lymphocyte_Blood | DNase | ID:6714
