@@ -20,14 +20,13 @@ import seillra as sl
 import torch.nn as nn
 import torch
 
-
 import os, sys
 from typing import Optional, Literal
 
 class SeiWrapper(nn.Module):
     def __init__(self, k: int, ft: Optional[str] = None, projection: bool = True, mode: Literal["sequence", "variant"] = "sequence", device: str = "cpu"):
         super().__init__()
-        self.device = device
+        # self.device = device # Already set below
         self.mode = mode
         self.projection = projection
         self.head = sm.get_sei_head().load_weights()
@@ -120,37 +119,62 @@ class SeiWrapper(nn.Module):
         return out
 
 
-def initialize_models(rank: int, trained_version: str, quant: bool, full = False):
-    if quant == True:
-        dev = "cpu"
-    else:
-        dev = 'cuda:1' if torch.cuda.is_available() else 'cpu'
-    if dev == "cpu":
-        q = "CPU"
-    else:
-        q = None
-    if not full:
-        cp_model_seq = sl.Sei_LLRA(k=rank, projection = False, mode = "sequence")
-        cp_model_var = sl.Sei_LLRA(k=rank, projection = False, mode = "variant")
-        sc_model_seq = sl.Sei_LLRA(k=rank, projection = True, mode = "sequence")
-        sc_model_var = sl.Sei_LLRA(k=rank, projection = True, mode = "variant")
+# def initialize_models(rank: int, trained_version: str, quant: bool, full = False):
+#     if quant == True:
+#         dev = "cpu"
+#     else:
+#         dev = 'cuda:1' if torch.cuda.is_available() else 'cpu'
+#     if dev == "cpu":
+#         q = "CPU"
+#     else:
+#         q = None
+#     if not full:
+#         cp_model_seq = sl.Sei_LLRA(k=rank, projection = False, mode = "sequence")
+#         cp_model_var = sl.Sei_LLRA(k=rank, projection = False, mode = "variant")
+#         sc_model_seq = sl.Sei_LLRA(k=rank, projection = True, mode = "sequence")
+#         sc_model_var = sl.Sei_LLRA(k=rank, projection = True, mode = "variant")
 
-        if quant != True:
+#         if quant != True:
+#             cp_model_seq.trunk.load_weights()
+#             cp_model_var.trunk.load_weights()
+#             sc_model_seq.trunk.load_weights()
+#             sc_model_var.trunk.load_weights()
+#     else:
+#         cp_model_seq = SeiWrapper(k=rank, ft = trained_version, projection = False, mode = "sequence", device = dev)
+#         cp_model_var = SeiWrapper(k=rank, ft = trained_version, projection = False, mode = "variant", device = dev)
+#         sc_model_seq = SeiWrapper(k=rank, ft = trained_version, projection = True, mode = "sequence", device = dev)
+#         sc_model_var = SeiWrapper(k=rank, ft = trained_version, projection = True, mode = "variant", device = dev)
+
+
+#     return cp_model_seq, cp_model_var, sc_model_seq, sc_model_var
+
+# Ensure model is fully moved to device after construction
+def initialize_models(rank, trained_version, quant, full=False):
+    dev = "cpu" if quant else ('cuda:1' if torch.cuda.is_available() else 'cpu')
+    
+    if not full:
+        cp_model_seq = sl.Sei_LLRA(k=rank, projection=False, mode="sequence")
+        cp_model_var = sl.Sei_LLRA(k=rank, projection=False, mode="variant")
+        sc_model_seq = sl.Sei_LLRA(k=rank, projection=True, mode="sequence")
+        sc_model_var = sl.Sei_LLRA(k=rank, projection=True, mode="variant")
+
+        if not quant:
             cp_model_seq.trunk.load_weights()
             cp_model_var.trunk.load_weights()
             sc_model_seq.trunk.load_weights()
             sc_model_var.trunk.load_weights()
     else:
-        cp_model_seq = SeiWrapper(k=rank, ft = trained_version, projection = False, mode = "sequence", device = dev)
-        cp_model_var = SeiWrapper(k=rank, ft = trained_version, projection = False, mode = "variant", device = dev)
-        sc_model_seq = SeiWrapper(k=rank, ft = trained_version, projection = True, mode = "sequence", device = dev)
-        sc_model_var = SeiWrapper(k=rank, ft = trained_version, projection = True, mode = "variant", device = dev)
+        cp_model_seq = SeiWrapper(k=rank, ft=trained_version, projection=False, mode="sequence", device=dev)
+        cp_model_var = SeiWrapper(k=rank, ft=trained_version, projection=False, mode="variant", device=dev)
+        sc_model_seq = SeiWrapper(k=rank, ft=trained_version, projection=True, mode="sequence", device=dev)
+        sc_model_var = SeiWrapper(k=rank, ft=trained_version, projection=True, mode="variant", device=dev)
 
+    # Explicitly move all models to target device and set .device attribute
+    for m in [cp_model_seq, cp_model_var, sc_model_seq, sc_model_var]:
+        m.to(dev)
+        m.device = dev   # keep .device attribute in sync
 
     return cp_model_seq, cp_model_var, sc_model_seq, sc_model_var
-
-
-
 
 def get_gtex_eqtls_promoter(model, rank, trained_version = ""):
     benchmark_name = "gtex_eqtls_near_promoter"
@@ -243,6 +267,68 @@ def get_over_under_null(sc_ref, sc_alt, vcf, df):
 
     return roc_promoter_ou, roc_promoter_un, roc_promoter_on 
 
+def get_group_qtls(model, rank, benchmark_name, vcf_name, temp_out, tsv_name, final_out, debug=False):
+    # Step 1: stream inference, write scores to disk batch-by-batch
+    get_variants_streaming(model, vcf_name, temp_out, benchmark_name=benchmark_name, debug=debug)
+    
+    if benchmark_name == "dsqtls_yoruba_GM12878":
+        df = pd.read_csv(tsv_name, index_col=False, header=0, sep="\t")
+        df = df[df["var.isused"]]       
+
+        df_pred = pd.read_csv(temp_out, sep="\t")
+
+        # df_combine = df.merge(df_pred, left_on=["var.chr", "var.pos_hg38"], right_on=["CHROM", "POS"], how="inner")
+        df_combine = df.merge(df_pred, left_on=["var.chr", "var.pos_hg19"], right_on=["CHROM", "POS"], how="inner")
+
+        ap_unsigned = average_precision_score(df_combine["obs.label"], abs(df_combine["GM12878_DNase_cp_mean"]))
+        df_combine.to_csv(final_out, sep="\t", index=False, compression="gzip")
+
+        df_combine = df_combine[df_combine["obs.label"] == 1]
+        pearson_signed = scipy.stats.pearsonr(-df_combine["GM12878_DNase_cp_mean"], df_combine["obs.estimate"])
+    else:
+        # Step 2: load predictions into a lookup dict
+        pred_dict = {}
+        for chunk in pd.read_csv(temp_out, sep="\t", chunksize=100_000):
+            for row in chunk.itertuples(index=False):
+                key = (row.CHROM, int(row.POS))
+                if benchmark_name == "dsqtls_yoruba_GM12878":
+                    pred_dict[key] = row.GM12878_DNase_cp_mean
+                else:
+                    pred_dict[key] = (row.GM12878_DNase_cp_mean, row.Cardiomyocyte_DNase_cp_mean)
+
+        # Step 3: stream ground truth, compute obs.label, merge with predictions
+        df = pd.read_csv(tsv_name, header=0, sep="\t")
+        if debug: # Debug - only first twelve batches
+            df = df.head(96).reset_index(drop=True)
+        df = df[df["var.isused"]].copy().reset_index(drop=True)
+
+        df["log10p"] = np.log10(df["obs.pval"]) * -1
+        dataf1 = df[df["log10p"] > 6].copy().reset_index(drop=True)
+        dataf2 = df[df["log10p"] < 3].copy().reset_index(drop=True)
+        dataf1["obs.label"] = 1
+        dataf2["obs.label"] = 0
+
+        # In debug mode, filtering might lead to one of the dataframes being empty
+        if dataf1.empty or dataf2.empty:
+            print("Warning: one label group is empty in debug mode, skipping metrics.")
+            return None, None
+
+        df = pd.concat([dataf1, dataf2])
+
+        keys = list(zip(df["var.chr"], df["var.pos_hg38"].astype(int)))
+        df["GM12878_DNase_cp_mean"] = [pred_dict.get(k, (np.nan, np.nan))[0] for k in keys]
+        df["Cardiomyocyte_DNase_cp_mean"] = [pred_dict.get(k, (np.nan, np.nan))[1] for k in keys]
+        df = df.dropna(subset=["GM12878_DNase_cp_mean"])
+
+        df.to_csv(final_out, sep="\t", index=False, compression="gzip")
+        print(f"{benchmark_name}: Saved scores")
+
+        ap_unsigned = average_precision_score(df["obs.label"], abs(df["GM12878_DNase_cp_mean"]))
+
+        df_sig = df[df["log10p"] > 6]
+        pearson_signed = scipy.stats.pearsonr(df_sig["GM12878_DNase_cp_mean"], df_sig["obs.beta"])
+
+    return pearson_signed, ap_unsigned
 
 def get_eu_lcl_caqtls(model, rank, trained_version = ""):
     benchmark_name = "caqtls_eu_GM12878"
@@ -267,7 +353,7 @@ def get_eu_lcl_caqtls(model, rank, trained_version = ""):
     dataf = pd.concat([dataf1, dataf2])
     df_combine = dataf.merge(df_pred, left_on = ["var.chr", "var.pos_hg38"], right_on=["CHROM", "POS"], how = "inner")
     df_combine.to_csv(f"scores/caqtls_eu_lcl_seilora_rank{rank}_quant.tsv.gz", sep="\t", index=False, compression="gzip")
-
+    print("EU LCL CAQTLs: Saved scores")
 
     ap_unsigned = average_precision_score(df_combine["obs.label"], abs(df_combine["GM12878_DNase_cp_mean"]))
 
@@ -384,7 +470,7 @@ def get_spi1_bqtls(model, rank, trained_version = ""):
 def get_variants(model, vcf, rank, benchmark_name="", trained_version = "", sc = False):
     dataset = VariantDataset(file_path=vcf)
     # dataloader = VariantDataLoader(dataset=dataset, batch_size=32, shuffle=False, num_workers=15)
-    dataloader = VariantDataLoader(dataset=dataset, batch_size=8, shuffle=False, num_workers=15) # Reduce batch size due to CUDA OOM
+    dataloader = VariantDataLoader(dataset=dataset, batch_size=8, shuffle=False, num_workers=8) # Reduce batch size due to CUDA OOM
     device = model.device
     model = model.to(device)
     model.eval()
@@ -417,10 +503,63 @@ def get_variants(model, vcf, rank, benchmark_name="", trained_version = "", sc =
 
     return all_cp_ref, all_cp_alt, all_vcf
 
+def get_variants_streaming(model, vcf, out_path, benchmark_name="", debug=False):
+    dataset = VariantDataset(file_path=vcf)
+    dataloader = VariantDataLoader(dataset=dataset, batch_size=8, shuffle=False, num_workers=0, pin_memory=False)
+   
+    # Determine device from model parameters, not the .device attribute
+    device = next(model.parameters()).device  # <-- reliable way to get actual device
+    model.eval()
+
+    first_write = True
+
+    for i, batch in enumerate(tqdm(dataloader, desc=f"Running {benchmark_name} benchmark")):
+        if debug and i>=12: # Debug - first two batches only
+            break
+
+        # Guard against None/malformed batches
+        if batch is None:
+            print(f"[WARNING] Batch {i} is None, skipping.")
+            continue
+
+        try:
+            ref, alt, vcf_batch = batch
+        except (TypeError, ValueError) as e:
+            print(f"[WARNING] Batch {i} could not be unpacked ({e}), skipping.")
+            continue
+
+        ref = ref.to(device)
+        alt = alt.to(device)
+
+        with torch.no_grad():
+            out_ref, out_alt = model((ref, alt))
+            diff = (out_alt.cpu() - out_ref.cpu()).numpy()  # move to CPU before numpy
+
+        df_pred = pd.DataFrame(vcf_batch, columns=["CHROM", "POS", "NAME", "REF", "ALT"])
+        df_pred["POS"] = df_pred["POS"].astype(int)
+        df_pred["GM12878_DNase_cp_mean"] = get_celltype_asssy_specific(diff, celltypes=["GM12878_B_Lymphocyte_Blood"], assays=["ATAC-seq", "DNase"], strict=True)
+        df_pred["Cardiomyocyte_DNase_cp_mean"] = get_celltype_asssy_specific(diff, celltypes=["Cardiomyocyte"], assays=["ATAC-seq", "DNase"], strict=True)
+
+        df_pred.to_csv(
+            out_path,
+            sep="\t",
+            index=False,
+            mode="w" if first_write else "a",
+            header=first_write
+        )
+        first_write = False
+
+        del ref, alt, out_ref, out_alt, diff, df_pred
+        if device != "cpu":
+            torch.cuda.empty_cache()
+
+    model = model.to("cpu")
+    torch.cuda.empty_cache()
+
 def get_scores(model, bed, rank, benchmark_name="", trained_version = "", scores = None, sc = False):
     dataset = SeqDataset(file_path=bed, scores_path = scores, fasta_path="../../sei-framework-main/resources/hg38_UCSC.fa",
             mode = "test", val_chrom = "chr10", test_chrom = ["chr8", "chr9"])
-    dataloader = SeqDataLoader(dataset=dataset, batch_size=32, shuffle=False, num_workers=15, n_samples=10_000)
+    dataloader = SeqDataLoader(dataset=dataset, batch_size=32, shuffle=False, num_workers=8, n_samples=10_000)
     device = model.device
 
     model = model.to(device)
@@ -452,16 +591,18 @@ def get_scores(model, bed, rank, benchmark_name="", trained_version = "", scores
     torch.cuda.empty_cache()
     return all_cp, all_scores
 
-def save_output(rank = 256, trained_version = None, quant = False, full = False):
+def save_output(rank = 256, trained_version = None, quant = False, full = False, debug=False):
     if quant:
         q = "quant"
     else:
         q = "no_quant"
 
-    model_name = f"seilora_{rank}_{trained_version}_{q}" 
-
+    model_name = f"seilora_{rank}_{trained_version}_{q}"
+    print(f"Model name: {model_name}")
 
     cp_seq_mod, cp_var_mod, sc_seq_mod, sc_var_mod = initialize_models(rank = rank, trained_version = trained_version, quant = quant, full = full)
+
+    os.makedirs("scores", exist_ok=True) # Check output directory exists
 
     ## PromoterAI
     # gtex_eqtls = get_gtex_eqtls_promoter(model = sc_var_mod, rank = rank, trained_version = trained_version)
@@ -513,34 +654,79 @@ def save_output(rank = 256, trained_version = None, quant = False, full = False)
     #         print(f"Results saved to {pai_path}")
     # # ChrombpNet
 
-    # Exclude Yoruba dataset temporarily due to data loading error
-    # yoruba_pearson, yoruba_ap = get_yoruba_lcl_dsqtls(model = cp_var_mod, rank = rank, trained_version = trained_version)
-    eu_pearson, eu_ap = get_eu_lcl_caqtls(model = cp_var_mod, rank = rank, trained_version = trained_version)
+    try:
+        # yoruba_pearson, yoruba_ap = get_yoruba_lcl_dsqtls(model = cp_var_mod, rank = rank, trained_version = trained_version)
+        yoruba_pearson, yoruba_ap = get_group_qtls(model = cp_var_mod, rank = rank,
+                                                   benchmark_name="dsqtls_yoruba_GM12878",
+                                                   vcf_name="../data/dsqtls.yoruba.lcls.benchmarking.all.vcf",
+                                                   temp_out=f"scores/dsqtls_yor_lcl_seilora_rank{rank}_stream.tsv",
+                                                   tsv_name="../data/dsqtls.yoruba.lcls.benchmarking.all.tsv",
+                                                   final_out=f"scores/dsqtls_yor_lcl_seilora_rank{rank}_quant.tsv.gz",
+                                                   debug=debug
+                                                   )
+        # Debug mode: 50 "Failed to insert allele" errors out of 96 variants total
+    except:
+        print(f"get_yoruba_lcl_dsqtls failed: {e}")
 
-    afr_pearson, afr_ap = get_afr_lcl_caqtls(model = cp_var_mod, rank = rank, trained_version = trained_version)
+    try:
+        # eu_pearson, eu_ap = get_eu_lcl_caqtls(model = cp_var_mod, rank = rank, trained_version = trained_version)
+        eu_pearson, eu_ap = get_group_qtls(model = cp_var_mod, rank = rank,
+                                           benchmark_name="caqtls_eu_GM12878",
+                                           vcf_name="../data/caqtls.eu.lcls.benchmarking.all.vcf",
+                                           temp_out=f"scores/caqtls_eu_lcl_seilora_rank{rank}_stream.tsv",
+                                           tsv_name="../data/caqtls.eu.lcls.benchmarking.all.tsv",
+                                           final_out=f"scores/caqtls_eu_lcl_seilora_rank{rank}_quant.tsv.gz",
+                                           debug=debug)
+    except Exception as e:
+        print(f"get_eu_lcl_caqtls failed: {e}")
 
-    microglia_pearson = get_microglia_caqtls(model = cp_var_mod, rank = rank, trained_version = trained_version)
-    smc_pearson = get_smc_caqtls(model = cp_var_mod, rank = rank, trained_version = trained_version)
-    spi1_pearson = get_spi1_bqtls(model = cp_var_mod, rank = rank, trained_version = trained_version)
-    print(microglia_pearson)
-    print(spi1_pearson)
+    try:
+        # afr_pearson, afr_ap = get_afr_lcl_caqtls(model = cp_var_mod, rank = rank, trained_version = trained_version)
+        afr_pearson, afr_ap = get_group_qtls(model = cp_var_mod, rank = rank,
+                                                 benchmark_name="caqtls_african_GM12878",
+                                                 vcf_name="../data/caqtls.african.lcls.benchmarking.all.vcf",
+                                                 temp_out=f"scores/dsqtls_afr_lcl_seilora_rank{rank}_stream.tsv",
+                                                 tsv_name="../data/caqtls.african.lcls.benchmarking.all.tsv",
+                                                 final_out=f"scores/dsqtls_afr_lcl_seilora_rank{rank}_quant.tsv.gz",
+                                                 debug=debug)
+    except Exception as e:
+        print(f"get_afr_lcl_caqtls failed: {e}")
+
+    # try:
+    #     microglia_pearson = get_microglia_caqtls(model = cp_var_mod, rank = rank, trained_version = trained_version)
+    # except Exception as e:
+    #     print(f"get_microglia_caqtls failed: {e}")
+    
+    # try:
+    #     smc_pearson = get_smc_caqtls(model = cp_var_mod, rank = rank, trained_version = trained_version)
+    # except Exception as e:
+    #     print(f"get_smc_caqtls failed: {e}")    
+    
+    # try:
+    #     spi1_pearson = get_spi1_bqtls(model = cp_var_mod, rank = rank, trained_version = trained_version)
+    # except Exception as e:
+    #     print(f"get_spi1_bqtls failed: {e}")
+    
+    # print(microglia_pearson)
+    # print(spi1_pearson)
 
     bpn_path = "benchmark_chrombpnet_all_quant.tsv"
     bpn_row_dict = {
         "model": model_name,
         "EU_LCL_pearson_signed": round(eu_pearson.statistic, 4),
-        # "Yoruba_LCL_pearson_signed": round(yoruba_pearson.statistic, 4),
+        "Yoruba_LCL_pearson_signed": round(yoruba_pearson.statistic, 4),
         "African_LCL_pearson_signed":round(afr_pearson.statistic, 4),
-        "EU_Microglia_pearson_signed": round(microglia_pearson.statistic, 4),
-        "EU_spi1_LCL_pearson_signed": round(spi1_pearson.statistic, 4),
-        "EU_SMC_pearson_signed": round(smc_pearson.statistic, 4),
+        # "EU_Microglia_pearson_signed": round(microglia_pearson.statistic, 4),
+        # "EU_spi1_LCL_pearson_signed": round(spi1_pearson.statistic, 4),
+        # "EU_SMC_pearson_signed": round(smc_pearson.statistic, 4),
 
         "EU_LCL_AP_unsigned": round(eu_ap, 4),
-        # "Yoruba_AP_LCL_unsigned": round(yoruba_ap, 4),
+        "Yoruba_AP_LCL_unsigned": round(yoruba_ap, 4),
         "African_AP_unsigned": round(afr_ap, 4)
   
     }
 
+    # os.makedirs("scores", exist_ok=True) # Check output directory exists
     file_exists = os.path.isfile(bpn_path)
     with open(bpn_path, "a", newline="") as f:
             writer = csv.DictWriter(f, fieldnames=bpn_row_dict.keys(), delimiter="\t")
@@ -558,7 +744,8 @@ def main():
     #save_output(rank="full", quant = False, full = True)
   
     # save_output(rank=1, quant = False) # AttributeError: 'SeiTrunk' object has no attribute 'load_weights'
-    save_output(rank=1, quant = True)
+    save_output(rank=1, quant = True, debug=False)
+    # save_output(rank=1, quant=True, debug=True)
     # # save_output(rank=2, quant = False)
     # save_output(rank=4, quant = False)
     # # save_output(rank=8, quant = False)

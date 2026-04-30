@@ -451,8 +451,8 @@ def save_output(rank = 256, trained_version = None, quant = False, full = False,
 
 def main():
     os.makedirs("scores", exist_ok=True)
-    save_output(rank=1, quant=True, debug=True)
-    # save_output(rank=1, quant=True)
+    # save_output(rank=1, quant=True, debug=True) # Test with first twelve batches - works fine
+    save_output(rank=1, quant=True)
 
 if __name__ == '__main__':
     main()

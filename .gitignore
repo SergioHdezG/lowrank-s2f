@@ -1,6 +1,7 @@
 *.tsv
 *.zip
 *.gz
+*.bed
 *.bb
 data/*
 resources/*
